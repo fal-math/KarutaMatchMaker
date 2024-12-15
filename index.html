@@ -7,7 +7,7 @@
   <title>対戦組み合わせ生成</title>
   <style>
     body {
-      font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+      font-family: Arial, sans-serif;
       margin: 20px;
       line-height: 1.6;
     }
@@ -26,8 +26,7 @@
     }
 
     input[type="file"],
-    textarea, 
-    select {
+    textarea {
       display: block;
       margin: 10px 0;
       width: 100%;
@@ -35,17 +34,20 @@
       font-size: 14px;
     }
 
-    .drop-zone {
-      border: 2px dashed #007BFF;
-      border-radius: 10px;
-      padding: 20px;
-      text-align: center;
-      color: #555;
-      cursor: pointer;
+    .conditions {
+      background: #f9f9f9;
+      padding: 15px;
+      margin-bottom: 20px;
+      border-left: 5px solid #007BFF;
     }
 
-    .drop-zone.dragging {
-      background-color: #f1f1f1;
+    .conditions ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+
+    .conditions ul li {
+      margin-bottom: 5px;
     }
 
     button {
@@ -93,205 +95,232 @@
 <body>
   <div class="container">
     <h1>対戦組み合わせ生成</h1>
-
-    <div>
-      <label for="delimiter">区切り文字を選択</label>
-      <select id="delimiter">
-        <option value=",">カンマ (,)</option>
-        <option value="\t">タブ (\t)</option>
-        <option value=" ">スペース</option>
-      </select>
+    <div class="conditions">
+      <h3>入力データの条件</h3>
+      <ul>
+        <li><b>必須:</b> <code>Id</code>, <code>級</code>, <code>所属</code></li>
+        <li><b>どちらかが必須:</b> <code>名前</code> または <code>姓</code> と <code>名</code></li>
+        <li><b>任意:</b> <code>組</code>, <code>勝数</code>, <code>欠席</code>, <code>名前読み</code> または <code>姓読み</code> と <code>名読み</code></li>
+      </ul>
     </div>
-
     <div>
       <label for="fileInput">CSVファイルを選択</label>
       <input type="file" id="fileInput" accept=".csv">
     </div>
-
-    <div class="drop-zone" id="dropZone">ここにファイルをドラッグ＆ドロップ</div>
-
     <div>
       <label for="pasteInput">データをコピーして貼り付け</label>
       <textarea id="pasteInput" rows="10" placeholder="ここにデータを貼り付けてください"></textarea>
     </div>
-
     <button id="generateButton" disabled>対戦組み合わせを生成</button>
-    <button id="downloadButton" disabled>結果をCSVでダウンロード</button>
-
     <div id="result"></div>
   </div>
 
   <script>
     let members = []; // データを格納
+    let DISPLAY_COLUMNS = []; // 出力する列を格納
 
+    // 必須列、条件付き必須列、任意列の設定
     const REQUIRED_COLUMNS = ["Id", "級", "所属"];
     const CONDITIONAL_REQUIRED_COLUMNS = [["名前"], ["姓", "名"]];
+    const OPTIONAL_COLUMNS = ["組", "勝数", "欠席", "名前読み", "姓読み", "名読み"];
 
-    const DISPLAY_COLUMNS = ["Id", "名前", "所属"];
-
-    function splitWithDelimiters(text, delimiter) {
-      return text.split("\n").map(row => row.trim().split(delimiter));
+    // 列名を正規化する関数
+    function normalizeColumnName(name) {
+      return name
+        .trim()                  // 前後の空白を削除
+        .replace(/\s+/g, "")     // すべての空白を削除
+        .replace(/　/g, "");     // 全角スペースを削除
     }
 
+    // 列名の検証関数
     function validateColumns(headers) {
-      const missingRequired = REQUIRED_COLUMNS.filter(col => !headers.includes(col));
+      // 列名を正規化
+      const normalizedHeaders = headers.map(normalizeColumnName);
+
+      // 必須列が全て存在するか確認
+      const missingRequired = REQUIRED_COLUMNS.filter(col =>
+        !normalizedHeaders.includes(normalizeColumnName(col))
+      );
       if (missingRequired.length > 0) {
         return `必須列が不足しています: ${missingRequired.join(", ")}`;
       }
+
+      // 条件付き必須列が満たされているか確認
       const satisfiesConditional = CONDITIONAL_REQUIRED_COLUMNS.some(group =>
-        group.every(col => headers.includes(col))
+        group.every(col => normalizedHeaders.includes(normalizeColumnName(col)))
       );
       if (!satisfiesConditional) {
         return "名前または (姓, 名) が必要です。";
       }
-      return null;
+
+      return null; // 問題なし
     }
 
+    // 出力する列を設定する関数
+    function setDisplayColumns(headers) {
+      if (headers.includes("姓") && headers.includes("名")) {
+        DISPLAY_COLUMNS = ["Id", "姓", "名", "所属"];
+      } else if (headers.includes("名前")) {
+        DISPLAY_COLUMNS = ["Id", "名前", "所属"];
+      } else {
+        DISPLAY_COLUMNS = [];
+      }
+    }
+
+    // データを正規化
     function normalizeData(data) {
       return data.map(row => {
+        // 名前を統一する（名前がない場合は姓+名を結合）
         if (!row["名前"] && row["姓"] && row["名"]) {
           row["名前"] = `${row["姓"]} ${row["名"]}`;
         }
+
         return row;
       });
     }
 
-    function parseData(content, delimiter) {
-      const rows = splitWithDelimiters(content, delimiter);
-      const headers = rows.shift();
+    // データをパース
+    function parseData(content, delimiters) {
+      const rows = splitWithDelimiters(content, delimiters);
+      const headers = rows.shift(); // 最初の行をヘッダーとして抽出
 
+      // 列名の検証
       const validationError = validateColumns(headers);
       if (validationError) {
-        alert(validationError);
+        alert(validationError); // エラーメッセージを表示
         return { headers: [], data: [] };
       }
 
-      const data = rows.map(row => {
-        const obj = {};
-        headers.forEach((header, i) => (obj[header] = row[i]));
+      // 出力する列を設定
+      setDisplayColumns(headers);
+
+      // データをオブジェクトに変換
+      const data = rows.filter(row => row.length === headers.length).map(row => {
+        let obj = {};
+        headers.forEach((header, i) => obj[header] = row[i]);
         return obj;
       });
 
-      return { headers, data: normalizeData(data) };
+      // データを正規化
+      const normalizedData = normalizeData(data);
+
+      return { headers, data: normalizedData };
     }
 
+    // 選択された区切り文字でデータを分割
+    function splitWithDelimiters(text, delimiters) {
+      const regex = new RegExp(`[${delimiters.replace(/[\s　]/g, " \\u3000")}]`);
+      return text.split("\n").map(row => row.trim().split(regex));
+    }
+
+    // 対戦組み合わせを生成
     function generatePairs(data) {
       const shuffled = data.sort(() => Math.random() - 0.5);
       const pairs = [];
       for (let i = 0; i < shuffled.length; i += 2) {
-        pairs.push(shuffled.slice(i, i + 2));
+        if (i + 1 < shuffled.length) {
+          pairs.push([shuffled[i], shuffled[i + 1]]);
+        } else {
+          pairs.push([shuffled[i]]);
+        }
       }
       return pairs;
     }
 
+    // 対戦結果を表示
     function displayPairs(pairs) {
       const resultDiv = document.getElementById("result");
-      resultDiv.innerHTML = "";
+      resultDiv.innerHTML = ""; // 前回の結果をクリア
 
-      let tableHTML = `<table><thead><tr>${DISPLAY_COLUMNS.map(
-        col => `<th>${col}</th>`
-      ).join("")}</tr></thead><tbody>`;
+      if (DISPLAY_COLUMNS.length === 0) {
+        resultDiv.innerHTML = "<p class='error'>出力する列が設定されていません。</p>";
+        return;
+      }
 
+      let tableHTML = `
+                <table>
+                    <thead>
+                        <tr>${DISPLAY_COLUMNS.map(col => `<th>${col}</th>`).join("")}</tr>
+                    </thead>
+                    <tbody>
+            `;
       pairs.forEach(pair => {
-        tableHTML += `<tr>${DISPLAY_COLUMNS.map(
-          col => `<td>${pair[0][col] || ""}</td>`
-        ).join("")}</tr>`;
-
+        tableHTML += "<tr>";
+        DISPLAY_COLUMNS.forEach(col => {
+          tableHTML += `<td>${pair[0][col] || ""}</td>`;
+        });
+        tableHTML += "</tr>";
         if (pair[1]) {
-          tableHTML += `<tr>${DISPLAY_COLUMNS.map(
-            col => `<td>${pair[1][col] || ""}</td>`
-          ).join("")}</tr>`;
+          tableHTML += "<tr>";
+          DISPLAY_COLUMNS.forEach(col => {
+            tableHTML += `<td>${pair[1][col] || ""}</td>`;
+          });
+          tableHTML += "</tr>";
         } else {
           tableHTML += `<tr><td colspan="${DISPLAY_COLUMNS.length}" class="center">不戦勝</td></tr>`;
         }
         tableHTML += `<tr><td colspan="${DISPLAY_COLUMNS.length}" class="center">--- VS ---</td></tr>`;
       });
+      tableHTML += "</tbody></table>";
 
-      tableHTML += `</tbody></table>`;
       resultDiv.innerHTML = tableHTML;
     }
 
-    function downloadCSV(pairs) {
-      let csvContent = `${DISPLAY_COLUMNS.join(",")}\n`;
-      pairs.forEach(pair => {
-        csvContent += DISPLAY_COLUMNS.map(col => pair[0][col] || "").join(",") + "\n";
-        if (pair[1]) {
-          csvContent += DISPLAY_COLUMNS.map(col => pair[1][col] || "").join(",") + "\n";
-        } else {
-          csvContent += "不戦勝".repeat(DISPLAY_COLUMNS.length) + "\n";
-        }
-      });
+    // ファイルがアップロードされたときの処理
+    document.getElementById("fileInput").addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-      const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-      const link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "pairs.csv";
-      link.click();
+      detectEncodingAndDecode(file, function (decodedContent) {
+        const delimiters = ",\t ";
+        const { headers, data } = parseData(decodedContent, delimiters);
+        members = data; // データを保存
+        document.getElementById("generateButton").disabled = members.length === 0;
+      });
+    });
+    // 文字コードを判別してデコード
+    function detectEncodingAndDecode(file, callback) {
+      const reader = new FileReader();
+
+      reader.onload = function (e) {
+        const uint8Array = new Uint8Array(e.target.result);
+
+        // Shift_JISデコーダーで文字列を取得
+        const decoderShiftJIS = new TextDecoder("Shift_JIS");
+        const decodedShiftJIS = decoderShiftJIS.decode(uint8Array);
+
+        // UTF-8デコーダーで文字列を取得
+        const decoderUTF8 = new TextDecoder("UTF-8");
+        const decodedUTF8 = decoderUTF8.decode(uint8Array);
+
+        // 判別: Shift_JIS特有の文字列パターンを調べる
+        const shiftJISRegex = /[\uFF61-\uFF9F\u4E00-\u9FA0\u3000-\u30FF]/;
+        const isShiftJIS = shiftJISRegex.test(decodedShiftJIS);
+
+        const decodedContent = isShiftJIS ? decodedShiftJIS : decodedUTF8;
+        callback(decodedContent);
+      };
+
+      reader.readAsArrayBuffer(file);
     }
 
-    const dropZone = document.getElementById("dropZone");
-    dropZone.addEventListener("dragover", e => {
-      e.preventDefault();
-      dropZone.classList.add("dragging");
-    });
-
-    dropZone.addEventListener("dragleave", () => {
-      dropZone.classList.remove("dragging");
-    });
-
-    dropZone.addEventListener("drop", e => {
-      e.preventDefault();
-      dropZone.classList.remove("dragging");
-
-      const file = e.dataTransfer.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const delimiter = document.getElementById("delimiter").value;
-          const { data } = parseData(e.target.result, delimiter);
-          members = data;
-          document.getElementById("generateButton").disabled = members.length === 0;
-        };
-        reader.readAsText(file);
-      }
-    });
-
-    document.getElementById("fileInput").addEventListener("change", e => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = e => {
-          const delimiter = document.getElementById("delimiter").value;
-          const { data } = parseData(e.target.result, delimiter);
-          members = data;
-          document.getElementById("generateButton").disabled = members.length === 0;
-        };
-        reader.readAsText(file);
-      }
-    });
-
-    document.getElementById("pasteInput").addEventListener("input", e => {
-      const content = e.target.value.trim();
-      const delimiter = document.getElementById("delimiter").value;
-      if (content) {
-        const { data } = parseData(content, delimiter);
-        members = data;
-        document.getElementById("generateButton").disabled = members.length === 0;
-      } else {
+    // データ貼り付けイベント
+    document.getElementById("pasteInput").addEventListener("input", function (event) {
+      const content = event.target.value.trim();
+      if (!content) {
         members = [];
         document.getElementById("generateButton").disabled = true;
+        return;
       }
+      const { data } = parseData(content, ",\t ");
+      members = data;
+      document.getElementById("generateButton").disabled = members.length === 0;
     });
 
-    document.getElementById("generateButton").addEventListener("click", () => {
+    // 対戦組み合わせ生成イベント
+    document.getElementById("generateButton").addEventListener("click", function () {
       const pairs = generatePairs(members);
       displayPairs(pairs);
-      document.getElementById("downloadButton").disabled = pairs.length === 0;
-    });
-
-    document.getElementById("downloadButton").addEventListener("click", () => {
-      const pairs = generatePairs(members);
-      downloadCSV(pairs);
     });
   </script>
 </body>
