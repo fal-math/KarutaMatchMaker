@@ -73,12 +73,26 @@
     th,
     td {
       border: 1px solid #ddd;
-      padding: 8px;
-      text-align: left;
+      padding: 10px;
+      text-align: center;
     }
 
     th {
-      background-color: #f4f4f4;
+      background-color: #007BFF;
+      color: white;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+
+    tr:nth-child(odd) {
+      background-color: #ffffff;
+    }
+
+    .seat-column {
+      font-weight: bold;
     }
 
     .center {
@@ -237,32 +251,46 @@
         return;
       }
 
+      // ヘッダーの作成
       let tableHTML = `
-                <table>
-                    <thead>
-                        <tr>${DISPLAY_COLUMNS.map(col => `<th>${col}</th>`).join("")}</tr>
-                    </thead>
-                    <tbody>
-            `;
-      pairs.forEach(pair => {
-        tableHTML += "<tr>";
-        DISPLAY_COLUMNS.forEach(col => {
-          tableHTML += `<td>${pair[0][col] || ""}</td>`;
-        });
-        tableHTML += "</tr>";
-        if (pair[1]) {
-          tableHTML += "<tr>";
-          DISPLAY_COLUMNS.forEach(col => {
-            tableHTML += `<td>${pair[1][col] || ""}</td>`;
-          });
-          tableHTML += "</tr>";
-        } else {
-          tableHTML += `<tr><td colspan="${DISPLAY_COLUMNS.length}" class="center">不戦勝</td></tr>`;
-        }
-        tableHTML += `<tr><td colspan="${DISPLAY_COLUMNS.length}" class="center">--- VS ---</td></tr>`;
-      });
-      tableHTML += "</tbody></table>";
+      <table>
+        <thead>
+          <tr>
+            <th class="seat-column">座席</th>
+            ${DISPLAY_COLUMNS.map(col => `<th>${col}</th>`).join("")}
+            <th class="seat-column">座席</th>
+            ${DISPLAY_COLUMNS.map(col => `<th>${col}</th>`).join("")}
+          </tr>
+        </thead>
+        <tbody>
+    `;
 
+      // 各ペアを行に表示
+      pairs.forEach((pair, index) => {
+        const player1 = pair[0];
+        const player2 = pair[1] || null; // 不戦勝対応
+
+        tableHTML += "<tr>";
+        // プレイヤー1のデータ
+        tableHTML += `<td>${index * 2 + 1}</td>`;
+        DISPLAY_COLUMNS.forEach(col => {
+          tableHTML += `<td>${player1[col] || ""}</td>`;
+        });
+
+        // プレイヤー2のデータ (不戦勝時は空欄)
+        if (player2) {
+          tableHTML += `<td>${index * 2 + 2}</td>`;
+          DISPLAY_COLUMNS.forEach(col => {
+            tableHTML += `<td>${player2[col] || ""}</td>`;
+          });
+        } else {
+          tableHTML += `<td colspan="${DISPLAY_COLUMNS.length + 1}" class="center">不戦勝</td>`;
+        }
+
+        tableHTML += "</tr>";
+      });
+
+      tableHTML += "</tbody></table>";
       resultDiv.innerHTML = tableHTML;
     }
 
