@@ -208,7 +208,8 @@ document.getElementById("pasteInput").addEventListener("input", function (event)
 });
 
 // 対戦組み合わせ生成イベント
-document.getElementById("generateButton").addEventListener("click", function () {
+document.getElementById("p").addEventListener("click", function () {
   const pairs = generatePairs(members);
   displayPairs(pairs);
+  document.getElementById("generateButton").disabled = true;
 });
