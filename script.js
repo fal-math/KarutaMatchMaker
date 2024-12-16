@@ -101,39 +101,59 @@ function displayPairs(pairs) {
   const resultDiv = document.getElementById("result");
   resultDiv.innerHTML = ""; // 前回の結果をクリア
 
-  if (DISPLAY_COLUMNS.length === 0) {
-    resultDiv.innerHTML = "<p class='error'>出力する列が設定されていません。</p>";
-    return;
-  }
-
+  // テーブルHTMLを組み立て
   let tableHTML = `
-            <table>
-                <thead>
-                    <tr>${DISPLAY_COLUMNS.map(col => `<th>${col}</th>`).join("")}</tr>
-                </thead>
-                <tbody>
-        `;
-  pairs.forEach(pair => {
-    tableHTML += "<tr>";
-    DISPLAY_COLUMNS.forEach(col => {
-      tableHTML += `<td>${pair[0][col] || ""}</td>`;
-    });
-    tableHTML += "</tr>";
-    if (pair[1]) {
-      tableHTML += "<tr>";
-      DISPLAY_COLUMNS.forEach(col => {
-        tableHTML += `<td>${pair[1][col] || ""}</td>`;
-      });
-      tableHTML += "</tr>";
-    } else {
-      tableHTML += `<tr><td colspan="${DISPLAY_COLUMNS.length}" class="center">不戦勝</td></tr>`;
-    }
-    tableHTML += `<tr><td colspan="${DISPLAY_COLUMNS.length}" class="center">--- VS ---</td></tr>`;
-  });
-  tableHTML += "</tbody></table>";
+    <table>
+      <thead>
+        <tr>
+          <th class="seat-column">座席</th>
+          <th>ID</th>
+          <th>姓</th>
+          <th>名</th>
+          <th>所属</th>
+          <th class="seat-column">座席</th>
+          <th>ID</th>
+          <th>姓</th>
+          <th>名</th>
+          <th>所属</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
 
+  // ペアのデータ挿入
+  pairs.forEach((pair, index) => {
+    const player1 = pair[0];
+    const player2 = pair[1] || null;
+
+    tableHTML += `
+      <tr>
+        <td class="seat-column">${index * 2 + 1}</td>
+        <td>${player1["Id"]}</td>
+        <td>${player1["姓"] || ""}</td>
+        <td>${player1["名"] || ""}</td>
+        <td>${player1["所属"] || ""}</td>
+    `;
+
+    if (player2) {
+      tableHTML += `
+        <td class="seat-column">${index * 2 + 2}</td>
+        <td>${player2["Id"]}</td>
+        <td>${player2["姓"] || ""}</td>
+        <td>${player2["名"] || ""}</td>
+        <td>${player2["所属"] || ""}</td>
+      `;
+    } else {
+      tableHTML += `<td colspan="5" class="center">不戦勝</td>`;
+    }
+
+    tableHTML += "</tr>";
+  });
+
+  tableHTML += "</tbody></table>";
   resultDiv.innerHTML = tableHTML;
 }
+
 
 // ファイルがアップロードされたときの処理
 document.getElementById("fileInput").addEventListener("change", function (event) {
