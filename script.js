@@ -6,6 +6,106 @@ const REQUIRED_COLUMNS = ["Id", "級", "所属"];
 const CONDITIONAL_REQUIRED_COLUMNS = [["名前"], ["姓", "名"]];
 const OPTIONAL_COLUMNS = ["組", "勝数", "欠席", "名前読み", "姓読み", "名読み"];
 
+// ======================================
+// 入力
+// ======================================
+
+// ファイルがアップロードされたときの処理
+document.getElementById("fileInput").addEventListener("change", function (event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  detectEncodingAndDecode(file, function (decodedContent) {
+    const delimiters = ",\t ";
+    const { data } = parseData(decodedContent, delimiters);
+    members = data; // データを保存
+    document.getElementById("generateButton").disabled = members.length === 0;
+  });
+});
+
+// データ貼り付けされたとき
+document.getElementById("pasteInput").addEventListener("input", function (event) {
+  const content = event.target.value.trim();
+  document.getElementById("validateButton").disabled = !content;
+});
+
+// 文字コードを判別してデコード
+function detectEncodingAndDecode(file, callback) {
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    const uint8Array = new Uint8Array(e.target.result);
+
+    // Shift_JISデコーダーで文字列を取得
+    const decoderShiftJIS = new TextDecoder("Shift_JIS");
+    const decodedShiftJIS = decoderShiftJIS.decode(uint8Array);
+
+    // UTF-8デコーダーで文字列を取得
+    const decoderUTF8 = new TextDecoder("UTF-8");
+    const decodedUTF8 = decoderUTF8.decode(uint8Array);
+
+    // 判別: Shift_JIS特有の文字列パターンを調べる
+    const shiftJISRegex = /[\uFF61-\uFF9F\u4E00-\u9FA0\u3000-\u30FF]/;
+    const isShiftJIS = shiftJISRegex.test(decodedShiftJIS);
+
+    const decodedContent = isShiftJIS ? decodedShiftJIS : decodedUTF8;
+    callback(decodedContent);
+  };
+
+  reader.readAsArrayBuffer(file);
+}
+
+// ======================================
+// 検証
+// ======================================
+
+document.getElementById("validateButton").addEventListener("click", function () {
+  const content = document.getElementById("pasteInput").value.trim();
+  if (!content) {
+    members = [];
+    document.getElementById("generateButton").disabled = true;
+    document.getElementById("validationResult").innerText = "入力データの型式が条件に違反しています";
+    return;
+  }
+  const { data } = parseData(content, ",\t ");
+  members = data;
+  if (members.length === 0) {
+    document.getElementById("generateButton").disabled = true;
+    document.getElementById("validationResult").innerText = "入力データの型式が条件に違反しています";
+  } else {
+    document.getElementById("generateButton").disabled = false;
+    document.getElementById("validationResult").innerText = "入力データの型式OK";
+  }
+});
+
+// データをパース
+function parseData(content, delimiters) {
+  const rows = splitWithDelimiters(content, delimiters);
+  const headers = rows.shift(); // 最初の行をヘッダーとして抽出
+
+  // 列名の検証
+  const validationError = validateColumns(headers);
+  if (validationError) {
+    alert(validationError); // エラーメッセージを表示
+    return { headers: [], data: [] };
+  }
+
+  // 出力する列を設定
+  setDisplayColumns(headers);
+
+  // データをオブジェクトに変換
+  const data = rows.filter(row => row.length === headers.length).map(row => {
+    let obj = {};
+    headers.forEach((header, i) => obj[header] = row[i]);
+    return obj;
+  });
+
+  // データを正規化
+  const normalizedData = normalizeData(data);
+
+  return { headers, data: normalizedData };
+}
+
 // 列名を正規化する関数
 function normalizeColumnName(name) {
   return name
@@ -56,38 +156,8 @@ function normalizeData(data) {
     if (!row["名前"] && row["姓"] && row["名"]) {
       row["名前"] = `${row["姓"]} ${row["名"]}`;
     }
-
-
     return row;
   });
-}
-
-// データをパース
-function parseData(content, delimiters) {
-  const rows = splitWithDelimiters(content, delimiters);
-  const headers = rows.shift(); // 最初の行をヘッダーとして抽出
-
-  // 列名の検証
-  const validationError = validateColumns(headers);
-  if (validationError) {
-    alert(validationError); // エラーメッセージを表示
-    return { headers: [], data: [] };
-  }
-
-  // 出力する列を設定
-  setDisplayColumns(headers);
-
-  // データをオブジェクトに変換
-  const data = rows.filter(row => row.length === headers.length).map(row => {
-    let obj = {};
-    headers.forEach((header, i) => obj[header] = row[i]);
-    return obj;
-  });
-
-  // データを正規化
-  const normalizedData = normalizeData(data);
-
-  return { headers, data: normalizedData };
 }
 
 // 選択された区切り文字でデータを分割
@@ -96,10 +166,20 @@ function splitWithDelimiters(text, delimiters) {
   return text.split("\n").map(row => row.trim().split(regex));
 }
 
+// ======================================
+// 対戦決定と表示
+// ======================================
+
+// 対戦組み合わせ生成イベント
+document.getElementById("generateButton").addEventListener("click", function () {
+  const pairs = generatePairs(members);
+  displayPairs(pairs);
+  document.getElementById("generateButton").disabled = true;
+});
 
 // 対戦結果を表示
 function displayPairs(pairs) {
-  const resultDiv = document.getElementById("result");
+  const resultDiv = document.getElementById("generationResult");
   resultDiv.innerHTML = ""; // 前回の結果をクリア
 
   // テーブルHTMLを組み立て
@@ -155,62 +235,3 @@ function displayPairs(pairs) {
   resultDiv.innerHTML = tableHTML;
 }
 
-
-// ファイルがアップロードされたときの処理
-document.getElementById("fileInput").addEventListener("change", function (event) {
-  const file = event.target.files[0];
-  if (!file) return;
-
-  detectEncodingAndDecode(file, function (decodedContent) {
-    const delimiters = ",\t ";
-    const { headers, data } = parseData(decodedContent, delimiters);
-    members = data; // データを保存
-    document.getElementById("generateButton").disabled = members.length === 0;
-  });
-});
-// 文字コードを判別してデコード
-function detectEncodingAndDecode(file, callback) {
-  const reader = new FileReader();
-
-  reader.onload = function (e) {
-    const uint8Array = new Uint8Array(e.target.result);
-
-    // Shift_JISデコーダーで文字列を取得
-    const decoderShiftJIS = new TextDecoder("Shift_JIS");
-    const decodedShiftJIS = decoderShiftJIS.decode(uint8Array);
-
-    // UTF-8デコーダーで文字列を取得
-    const decoderUTF8 = new TextDecoder("UTF-8");
-    const decodedUTF8 = decoderUTF8.decode(uint8Array);
-
-    // 判別: Shift_JIS特有の文字列パターンを調べる
-    const shiftJISRegex = /[\uFF61-\uFF9F\u4E00-\u9FA0\u3000-\u30FF]/;
-    const isShiftJIS = shiftJISRegex.test(decodedShiftJIS);
-
-    const decodedContent = isShiftJIS ? decodedShiftJIS : decodedUTF8;
-    callback(decodedContent);
-  };
-
-  reader.readAsArrayBuffer(file);
-}
-
-
-// データ貼り付けイベント
-document.getElementById("pasteInput").addEventListener("input", function (event) {
-  const content = event.target.value.trim();
-  if (!content) {
-    members = [];
-    document.getElementById("generateButton").disabled = true;
-    return;
-  }
-  const { data } = parseData(content, ",\t ");
-  members = data;
-  document.getElementById("generateButton").disabled = members.length === 0;
-});
-
-// 対戦組み合わせ生成イベント
-document.getElementById("generateButton").addEventListener("click", function () {
-  const pairs = generatePairs(members);
-  displayPairs(pairs);
-  document.getElementById("generateButton").disabled = true;
-});

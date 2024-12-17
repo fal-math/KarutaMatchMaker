@@ -28,8 +28,10 @@
       <label for="pasteInput">データをコピーして貼り付け</label>
       <textarea id="pasteInput" rows="10" placeholder="ここにデータを貼り付けてください"></textarea>
     </div>
+    <button id="validateButton" disabled>貼り付けたデータの型式確認</button>
+    <p id="validationResult"></p>
     <button id="generateButton" disabled>対戦組み合わせを生成</button>
-    <div id="result"></div>
+    <div id="generationResult"></div>
   </div>
   <script src="script.js"></script>
   <script src="shuffle.js"></script>
