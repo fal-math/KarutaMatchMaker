@@ -64,14 +64,13 @@ document.getElementById("validateButton").addEventListener("click", function () 
   if (!content) {
     members = [];
     document.getElementById("generateButton").disabled = true;
-    document.getElementById("validationResult").innerText = "入力データの型式が条件に違反しています";
+    document.getElementById("validationResult").innerText = "入力データが不足しています";
     return;
   }
   const { data } = parseData(content, ",\t ");
   members = data;
   if (members.length === 0) {
     document.getElementById("generateButton").disabled = true;
-    document.getElementById("validationResult").innerText = "入力データの型式が条件に違反しています";
   } else {
     document.getElementById("generateButton").disabled = false;
     document.getElementById("validationResult").innerText = "入力データの型式OK";
@@ -86,7 +85,9 @@ function parseData(content, delimiters) {
   // 列名の検証
   const validationError = validateColumns(headers);
   if (validationError) {
-    alert(validationError); // エラーメッセージを表示
+    document.getElementById("validationResult").innerText = validationError;
+    document.getElementById("validationResult").classList.add("error");
+    // alert(validationError); // エラーメッセージを表示
     return { headers: [], data: [] };
   }
 
@@ -172,66 +173,103 @@ function splitWithDelimiters(text, delimiters) {
 
 // 対戦組み合わせ生成イベント
 document.getElementById("generateButton").addEventListener("click", function () {
-  const pairs = generatePairs(members);
-  displayPairs(pairs);
+  const groupedData = groupByGradeAndGroup(members); // 級・組ごとにグループ化
+  let pairs = [];
+
+  // 各グループごとにペア生成
+  for (const group in groupedData) {
+    const groupPairs = generatePairs(groupedData[group]);
+    groupPairs.forEach(pair => {
+      pair.groupKey = group; // グループ情報を各ペアに付与
+    });
+    pairs.push(...groupPairs);
+  }
+
+  displayPairsWithGroup(pairs);
   document.getElementById("generateButton").disabled = true;
 });
 
-// 対戦結果を表示
-function displayPairs(pairs) {
-  const resultDiv = document.getElementById("generationResult");
-  resultDiv.innerHTML = ""; // 前回の結果をクリア
-
-  // テーブルHTMLを組み立て
-  let tableHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th class="seat-column">座席</th>
-          <th>ID</th>
-          <th>姓</th>
-          <th>名</th>
-          <th>所属</th>
-          <th class="seat-column">座席</th>
-          <th>ID</th>
-          <th>姓</th>
-          <th>名</th>
-          <th>所属</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  // ペアのデータ挿入
-  pairs.forEach((pair, index) => {
-    const player1 = pair[0];
-    const player2 = pair[1] || null;
-
-    tableHTML += `
-      <tr>
-        <td class="seat-column">${index * 2 + 1}</td>
-        <td>${player1["Id"]}</td>
-        <td>${player1["姓"] || ""}</td>
-        <td>${player1["名"] || ""}</td>
-        <td>${player1["所属"] || ""}</td>
-    `;
-
-    if (player2) {
-      tableHTML += `
-        <td class="seat-column">${index * 2 + 2}</td>
-        <td>${player2["Id"]}</td>
-        <td>${player2["姓"] || ""}</td>
-        <td>${player2["名"] || ""}</td>
-        <td>${player2["所属"] || ""}</td>
-      `;
-    } else {
-      tableHTML += `<td colspan="5" class="center">不戦勝</td>`;
-    }
-
-    tableHTML += "</tr>";
-  });
-
-  tableHTML += "</tbody></table>";
-  resultDiv.innerHTML = tableHTML;
+// データを級・組のペアでグループ化し、組がない場合は級のみを表示
+function groupByGradeAndGroup(data) {
+  return data.reduce((groups, item) => {
+    const groupKey = item["組"] ? `${item["級"]}${item["組"]}` : `${item["級"]}`; // 組がなければ級のみ
+    if (!groups[groupKey]) groups[groupKey] = [];
+    groups[groupKey].push(item);
+    return groups;
+  }, {});
 }
 
+
+// グループごとに対戦結果を表示
+function displayPairsWithGroup(pairs) {
+  const resultDiv = document.getElementById("generationResult");
+  resultDiv.innerHTML = ""; // 結果クリア
+
+  // グループごとにペアを分ける
+  const groupedPairs = pairs.reduce((groups, pair) => {
+    const groupKey = pair.groupKey || "未設定";
+    if (!groups[groupKey]) groups[groupKey] = [];
+    groups[groupKey].push(pair);
+    return groups;
+  }, {});
+
+  // グループごとにテーブルを生成
+  for (const groupKey in groupedPairs) {
+    const groupPairs = groupedPairs[groupKey];
+
+    // テーブルタイトルを追加
+    let tableHTML = `<h3>${groupKey} の対戦結果</h3>`;
+    tableHTML += `
+      <table>
+        <thead>
+          <tr>
+            <th class="seat-column">座席</th>
+            <th>ID</th>
+            <th>姓</th>
+            <th>名</th>
+            <th>所属</th>
+            <th class="seat-column">座席</th>
+            <th>ID</th>
+            <th>姓</th>
+            <th>名</th>
+            <th>所属</th>
+          </tr>
+        </thead>
+        <tbody>
+    `;
+
+    // グループ内のペアをテーブルに追加
+    groupPairs.forEach((pair, index) => {
+      const player1 = pair[0];
+      const player2 = pair[1] || null;
+
+      tableHTML += `
+        <tr>
+          <td class="seat-column">${index * 2 + 1}</td>
+          <td>${player1["Id"]}</td>
+          <td>${player1["姓"] || ""}</td>
+          <td>${player1["名"] || ""}</td>
+          <td>${player1["所属"] || ""}</td>
+      `;
+
+      if (player2) {
+        tableHTML += `
+          <td class="seat-column">${index * 2 + 2}</td>
+          <td>${player2["Id"]}</td>
+          <td>${player2["姓"] || ""}</td>
+          <td>${player2["名"] || ""}</td>
+          <td>${player2["所属"] || ""}</td>
+        `;
+      } else {
+        tableHTML += `<td colspan="5" class="center">不戦勝</td>`;
+      }
+
+      tableHTML += "</tr>";
+    });
+
+    tableHTML += "</tbody></table>";
+
+    // グループのテーブルを結果欄に追加
+    resultDiv.innerHTML += tableHTML;
+  }
+}
