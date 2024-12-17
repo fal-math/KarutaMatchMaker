@@ -56,6 +56,9 @@ function normalizeData(data) {
     if (!row["名前"] && row["姓"] && row["名"]) {
       row["名前"] = `${row["姓"]} ${row["名"]}`;
     }
+    if (!row["級組"] && row["級"] && row["組"]) {
+      row["級組"] = `${row["姓"]} ${row["名"]}`;
+    }
 
     return row;
   });
@@ -208,7 +211,7 @@ document.getElementById("pasteInput").addEventListener("input", function (event)
 });
 
 // 対戦組み合わせ生成イベント
-document.getElementById("p").addEventListener("click", function () {
+document.getElementById("generateButton").addEventListener("click", function () {
   const pairs = generatePairs(members);
   displayPairs(pairs);
   document.getElementById("generateButton").disabled = true;
