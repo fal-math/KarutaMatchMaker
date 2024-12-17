@@ -56,9 +56,7 @@ function normalizeData(data) {
     if (!row["名前"] && row["姓"] && row["名"]) {
       row["名前"] = `${row["姓"]} ${row["名"]}`;
     }
-    if (!row["級組"] && row["級"] && row["組"]) {
-      row["級組"] = `${row["姓"]} ${row["名"]}`;
-    }
+
 
     return row;
   });
