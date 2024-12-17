@@ -9,21 +9,21 @@ function fisherYatesShuffle(array) {
 
 // 対戦組み合わせを生成
 function generatePairs(data) {
-  if (!Array.isArray(data) || data.length === 0) {
-    console.warn("入力データが空です。");
-    return [];
-  }
+  // 欠席者 (欠席 = TRUE) を除外
+  const presentMembers = data.filter(member => member['欠席'] !== 'TRUE');
 
-  console.debug("入力データ:", data);
+  console.debug("出席者のみ:", presentMembers);
 
-  const shuffled = fisherYatesShuffle([...data]); // シャッフル
+  // Fisher-Yates法でシャッフル
+  const shuffled = fisherYatesShuffle([...presentMembers]);
   const pairs = [];
 
+  // 2人ずつペアを作成
   for (let i = 0; i < shuffled.length; i += 2) {
     if (i + 1 < shuffled.length) {
       pairs.push([shuffled[i], shuffled[i + 1]]);
     } else {
-      // 奇数の場合、不戦勝の扱い
+      // 奇数の場合、不戦勝
       pairs.push([shuffled[i]]);
     }
   }

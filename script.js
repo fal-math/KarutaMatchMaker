@@ -73,11 +73,32 @@ document.getElementById("validateButton").addEventListener("click", function () 
     document.getElementById("generateButton").disabled = true;
   } else {
     document.getElementById("generateButton").disabled = false;
-    document.getElementById("validationResult").innerText = "入力データの型式OK";
   }
 });
 
-// データをパース
+// 級・組ごとの人数をカウントして表示
+function displayGroupCounts(data) {
+  const groupCounts = data.reduce((counts, row) => {
+    // 欠席者は除外
+    if (row["欠席"] === "TRUE") return counts;
+    
+    const groupKey = row["組"] ? `${row["級"]}${row["組"]}` : `${row["級"]}`; // 組がなければ級のみ
+    counts[groupKey] = (counts[groupKey] || 0) + 1;
+    return counts;
+  }, {});
+
+  // UIに表示
+  const groupCountList = document.getElementById("groupCountList");
+  groupCountList.innerHTML = ""; // 既存のリストをクリア
+
+  for (const groupKey in groupCounts) {
+    const li = document.createElement("li");
+    li.innerText = `${groupKey}: ${groupCounts[groupKey]}人`;
+    groupCountList.appendChild(li);
+  }
+}
+
+// データをパースする部分でクラス人数を表示
 function parseData(content, delimiters) {
   const rows = splitWithDelimiters(content, delimiters);
   const headers = rows.shift(); // 最初の行をヘッダーとして抽出
@@ -87,7 +108,6 @@ function parseData(content, delimiters) {
   if (validationError) {
     document.getElementById("validationResult").innerText = validationError;
     document.getElementById("validationResult").classList.add("error");
-    // alert(validationError); // エラーメッセージを表示
     return { headers: [], data: [] };
   }
 
@@ -104,8 +124,12 @@ function parseData(content, delimiters) {
   // データを正規化
   const normalizedData = normalizeData(data);
 
+  // クラスごとの人数をUIに表示
+  displayGroupCounts(normalizedData);
+
   return { headers, data: normalizedData };
 }
+
 
 // 列名を正規化する関数
 function normalizeColumnName(name) {
