@@ -39,11 +39,11 @@ function previousPowerOfTwo(n) {
 function generatePairs2(data, shuffleFn = shuffle) {
   // 欠席者を除外
   const presentMembers = data.filter(member => member["欠席"] !== "TRUE");
-  
+
   // 試合数・勝ち抜き数を計算
   const numberOfWinners = previousPowerOfTwo(presentMembers.length);
   const numberOfMatches = presentMembers.length - numberOfWinners;
-  
+
   // プレイヤーをシャッフルし、試合用と不戦勝用に分割
   const shuffled = shuffleFn([...presentMembers]);
   const playersForMatches = shuffled.slice(0, 2 * numberOfMatches);
@@ -58,6 +58,7 @@ function generatePairs2(data, shuffleFn = shuffle) {
 
   while (playersForMatches.length > 0) {
     const player = playersForMatches.shift();
+    let sameClubMatchPermission = false;
 
     if (leftCount === numberOfMatches) {
       // 左枠が埋まったら右枠を埋めるしかない
@@ -68,10 +69,32 @@ function generatePairs2(data, shuffleFn = shuffle) {
           rightCount++;
           break;
         } else if (i + 1 === leftCount) {
-          // 全て同一所属で割り当て不可の場合はエラー
-          throw new Error("Not implemented");
+          // 空き枠が全て同一所属で割り当て不可の場合
+          sameClubMatchPermission = true;
+          break;
         }
       }
+
+      // 空き枠が全て同一所属で割り当て不可の場合
+      if (sameClubMatchPermission) {
+        // 左右が埋まっている対戦を探索
+        for (let i = 0; i < rightCount; i++) {
+          const leftPlayer = pairs[i][0];
+          if (player["所属"] !== leftPlayer["所属"]) {
+            // 左の人と所属が違うなら交換可能
+            pairs[i][0] = player;
+            pairs[rightCount][1] = leftPlayer;
+            rightCount++;
+            break;
+          } else if (i + 1 === rightCount) {
+            // どうしようもないので同会対戦
+            pairs[rightCount][1] = player;
+            rightCount++;
+            break;
+          }
+        }
+      }
+
     } else if (leftCount === rightCount) {
       // 左右が同数なら新たな試合枠の左側に割り当て
       pairs[leftCount][0] = player;
@@ -96,7 +119,7 @@ function generatePairs2(data, shuffleFn = shuffle) {
         }
       }
       // ここでassignedがfalseになるケースはロジック上発生しないはず
-      if(assigned==false){
+      if (assigned == false) {
         throw new Error("something wrong");
       }
     }
