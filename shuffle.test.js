@@ -59,8 +59,7 @@ const basicOddExpectedWalkovers = [
 ];
 
 // --------------------------------------
-// テスト: 全員欠席
-// 人数は2のべき乗、全員欠席
+// テスト: 特殊ケース: 全員欠席,
 // --------------------------------------
 
 // 基本的動作テストデータ1
@@ -76,9 +75,7 @@ const allAbsentTestExpectedPairs = [];
 const allAbsentTestExpectedWalkovers = []; // 奇数人数ではないので不戦勝なし
 
 // --------------------------------------
-// テスト: 同会対決を避ける
-// 退避人数の最大値は1
-// 人数は2のべき乗、全員出席
+// 同会対決回避: 4人、全員出席
 // --------------------------------------
 
 // 同会対決回避テストデータ1
@@ -103,9 +100,7 @@ const avoidSameClubExpectedPairs1 = [
 const avoidSameClubExpectedWalkovers1 = []; // 奇数人数ではないので不戦勝なし
 
 // --------------------------------------
-// テスト: 同会対決を避ける
-// 退避人数の最大値は3
-// 人数は2のべき乗、全員出席
+// 同会対決回避: 8人、全員出席
 // --------------------------------------
 
 // 同会対決回避テストデータ2
@@ -140,46 +135,43 @@ const avoidSameClubExpectedPairs2 = [
   ],]
 const avoidSameClubExpectedWalkovers2 = []; // 奇数人数ではないので不戦勝なし
 
-// ======================================
-// テストすべき関数の実行(Act)
-// ======================================
-
-// ======================================
-// テスト結果の検証(Assert)
-// ======================================
-
 const testCases = [
-  // {
-  //   description: "基本的動作: 偶数人数、全員出席",
-  //   input: basicEvenTestInputData,
-  //   expectedPairs: basicEvenTestExpectedPairs,
-  //   expectedWalkovers: basicEvenTestExpectedWalkovers,
-  // },
-  // {
-  //   description: "基本的動作: 奇数人数、全員出席",
-  //   input: basicOddTestInputData,
-  //   expectedPairs: basicOddExpectedPairs,
-  //   expectedWalkovers: basicOddExpectedWalkovers,
-  // },
-  // {
-  //   description: "特殊ケース: 全員欠席",
-  //   input: allAbsentTestInputData,
-  //   expectedPairs: allAbsentTestExpectedPairs,
-  //   expectedWalkovers: allAbsentTestExpectedWalkovers,
-  // },
   {
-    description: "同会対決回避: 少人数、全員出席",
+    description: "基本的動作: 偶数人数、全員出席",
+    input: basicEvenTestInputData,
+    expectedPairs: basicEvenTestExpectedPairs,
+    expectedWalkovers: basicEvenTestExpectedWalkovers,
+  },
+  {
+    description: "基本的動作: 奇数人数、全員出席",
+    input: basicOddTestInputData,
+    expectedPairs: basicOddExpectedPairs,
+    expectedWalkovers: basicOddExpectedWalkovers,
+  },
+  {
+    description: "特殊ケース: 全員欠席",
+    input: allAbsentTestInputData,
+    expectedPairs: allAbsentTestExpectedPairs,
+    expectedWalkovers: allAbsentTestExpectedWalkovers,
+  },
+  {
+    description: "同会対決回避: 4人、全員出席",
     input: avoidSameClubTestInputData1,
     expectedPairs: avoidSameClubExpectedPairs1,
     expectedWalkovers: avoidSameClubExpectedWalkovers1,
   },
   {
-    description: "同会対決回避: 大人数、全員出席",
+    description: "同会対決回避: 8人、全員出席",
     input: avoidSameClubTestInputData2,
     expectedPairs: avoidSameClubExpectedPairs2,
     expectedWalkovers: avoidSameClubExpectedWalkovers2,
   },
 ];
+
+// ======================================
+// テストすべき関数の実行(Act), 検証(Assert)
+// ======================================
+
 describe("generatePairs2 - Data Driven Tests", () => {
   test.each(testCases)(
     "$description",

@@ -81,7 +81,7 @@ function displayGroupCounts(data) {
   const groupCounts = data.reduce((counts, row) => {
     // 欠席者は除外
     if (row["欠席"] === "TRUE") return counts;
-    
+
     const groupKey = row["組"] ? `${row["級"]}${row["組"]}` : `${row["級"]}`; // 組がなければ級のみ
     counts[groupKey] = (counts[groupKey] || 0) + 1;
     return counts;
@@ -91,9 +91,11 @@ function displayGroupCounts(data) {
   const groupCountList = document.getElementById("groupCountList");
   groupCountList.innerHTML = ""; // 既存のリストをクリア
 
+
   for (const groupKey in groupCounts) {
+    const walkoverCounts = 2 * previousPowerOfTwo(groupCounts[groupKey]) - groupCounts[groupKey];
     const li = document.createElement("li");
-    li.innerText = `${groupKey}: ${groupCounts[groupKey]}人`;
+    li.innerText = `${groupKey}: ${groupCounts[groupKey]}人 (不戦勝 ${walkoverCounts}人)`;
     groupCountList.appendChild(li);
   }
 }
@@ -195,6 +197,7 @@ function splitWithDelimiters(text, delimiters) {
 // 対戦決定と表示
 // ======================================
 
+// TODO:不戦勝を表示
 // 対戦組み合わせ生成イベント
 document.getElementById("generateButton").addEventListener("click", function () {
   const groupedData = groupByGradeAndGroup(members); // 級・組ごとにグループ化
