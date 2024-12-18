@@ -198,18 +198,18 @@ function splitWithDelimiters(text, delimiters) {
 // 対戦組み合わせ生成イベント
 document.getElementById("generateButton").addEventListener("click", function () {
   const groupedData = groupByGradeAndGroup(members); // 級・組ごとにグループ化
-  let pairs = [];
+  let allPairs = [];
 
   // 各グループごとにペア生成
   for (const group in groupedData) {
-    const groupPairs = generatePairs(groupedData[group]);
+    const { pairs: groupPairs, walkovers } = generatePairs2(groupedData[group]);
     groupPairs.forEach(pair => {
       pair.groupKey = group; // グループ情報を各ペアに付与
     });
-    pairs.push(...groupPairs);
+    allPairs.push(...groupPairs);
   }
 
-  displayPairsWithGroup(pairs);
+  displayPairsWithGroup(allPairs);
   document.getElementById("generateButton").disabled = true;
 });
 
