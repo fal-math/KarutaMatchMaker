@@ -205,7 +205,7 @@ document.getElementById("generateButton").addEventListener("click", function () 
 
   // 各グループごとにペア生成
   for (const group in groupedData) {
-    const { pairs: groupPairs, walkovers } = generatePairs2(groupedData[group]);
+    const { pairs: groupPairs, walkovers } = generatePairs(groupedData[group]);
     groupPairs.forEach(pair => {
       pair.groupKey = group; // グループ情報を各ペアに付与
     });

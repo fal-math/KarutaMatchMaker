@@ -1,4 +1,4 @@
-module.exports = { generatePairs2 };
+module.exports = { generatePairs };
 
 // Fisher-Yates法によるシャッフル
 function shuffle(array) {
@@ -9,23 +9,6 @@ function shuffle(array) {
   return array;
 }
 
-// 対戦組み合わせを生成する関数
-function generatePairs(data) {
-  // 欠席者を除外
-  const presentMembers = data.filter(member => member['欠席'] !== 'TRUE');
-  const shuffled = fisherYatesShuffle([...presentMembers]);
-  const pairs = [];
-  for (let i = 0; i < shuffled.length; i += 2) {
-    if (i + 1 < shuffled.length) {
-      pairs.push([shuffled[i], shuffled[i + 1]]);
-    } else {
-      pairs.push([shuffled[i]]); // 奇数の場合、最後の1人が余る
-    }
-  }
-  return pairs;
-}
-
-
 function previousPowerOfTwo(n) {
   if (n < 1) return 0; // 1未満の場合は0を返す
   let power = 1;
@@ -35,8 +18,7 @@ function previousPowerOfTwo(n) {
   return power >> 1; // 最後に2で割る (1つ前の2の冪乗)
 }
 
-
-function generatePairs2(data, shuffleFn = shuffle) {
+function generatePairs(data, shuffleFn = shuffle) {
   // 欠席者を除外
   const presentMembers = data.filter(member => member["欠席"] !== "TRUE");
 
@@ -68,33 +50,36 @@ function generatePairs2(data, shuffleFn = shuffle) {
           pairs[i][1] = player;
           rightCount++;
           break;
-        } else if (i + 1 === leftCount) {
+        } else if (i + 1 === numberOfMatches) {
           // 空き枠が全て同一所属で割り当て不可の場合
           sameClubMatchPermission = true;
-          break;
         }
-      }
-
-      // 空き枠が全て同一所属で割り当て不可の場合
-      if (sameClubMatchPermission) {
-        // 左右が埋まっている対戦を探索
-        for (let i = 0; i < rightCount; i++) {
-          const leftPlayer = pairs[i][0];
-          if (player["所属"] !== leftPlayer["所属"]) {
-            // 左の人と所属が違うなら交換可能
-            pairs[i][0] = player;
-            pairs[rightCount][1] = leftPlayer;
-            rightCount++;
-            break;
-          } else if (i + 1 === rightCount) {
-            // どうしようもないので同会対戦
-            pairs[rightCount][1] = player;
+        // 空き枠が全て同一所属で割り当て不可の場合
+        if (sameClubMatchPermission) {
+          // 左右が埋まっている対戦を探索
+          if (rightCount === 0) {
+            pairs[0][1] = player;
             rightCount++;
             break;
           }
+          for (let j = 0; j < rightCount; j++) {
+            const leftPlayer = pairs[j][0];
+            const rightPlayer = pairs[j][1];
+            if (player["所属"] !== leftPlayer["所属"] && player["所属"] !== rightPlayer["所属"]) {
+              // 左の人と所属が違うなら交換可能
+              pairs[j][0] = player;
+              pairs[rightCount][1] = leftPlayer;
+              rightCount++;
+              break;
+            } else if (j + 1 === rightCount) {
+              // どうしようもないので同会対戦
+              pairs[rightCount][1] = player;
+              rightCount++;
+              break;
+            }
+          }
         }
       }
-
     } else if (leftCount === rightCount) {
       // 左右が同数なら新たな試合枠の左側に割り当て
       pairs[leftCount][0] = player;
@@ -175,7 +160,6 @@ function generatePairs2(data, shuffleFn = shuffle) {
     }
   }
 
-  console.debug("生成されたペア:", pairs);
   return pairs;
 }
 */
