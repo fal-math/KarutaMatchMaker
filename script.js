@@ -32,26 +32,27 @@ document.getElementById("pasteInput").addEventListener("input", function (event)
 // 文字コードを判別してデコード
 function detectEncodingAndDecode(file, callback) {
   const reader = new FileReader();
-
-  reader.onload = function (e) {
-    const uint8Array = new Uint8Array(e.target.result);
-
-    // Shift_JISデコーダーで文字列を取得
-    const decoderShiftJIS = new TextDecoder("Shift_JIS");
-    const decodedShiftJIS = decoderShiftJIS.decode(uint8Array);
-
-    // UTF-8デコーダーで文字列を取得
-    const decoderUTF8 = new TextDecoder("UTF-8");
-    const decodedUTF8 = decoderUTF8.decode(uint8Array);
-
-    // 判別: Shift_JIS特有の文字列パターンを調べる
-    const shiftJISRegex = /[\uFF61-\uFF9F\u4E00-\u9FA0\u3000-\u30FF]/;
-    const isShiftJIS = shiftJISRegex.test(decodedShiftJIS);
-
-    const decodedContent = isShiftJIS ? decodedShiftJIS : decodedUTF8;
-    callback(decodedContent);
+  
+  reader.onload = function(e) {
+    try {
+      const uint8Array = new Uint8Array(e.target.result);
+      const decoderShiftJIS = new TextDecoder("Shift_JIS");
+      const decodedShiftJIS = decoderShiftJIS.decode(uint8Array);
+      const decoderUTF8 = new TextDecoder("UTF-8");
+      const decodedUTF8 = decoderUTF8.decode(uint8Array);
+      const shiftJISRegex = /[\uFF61-\uFF9F\u4E00-\u9FA0\u3000-\u30FF]/;
+      const isShiftJIS = shiftJISRegex.test(decodedShiftJIS);
+      const decodedContent = isShiftJIS ? decodedShiftJIS : decodedUTF8;
+      callback(decodedContent);
+    } catch (error) {
+      displayError("ファイルのデコード中にエラーが発生しました。");
+    }
   };
-
+  
+  reader.onerror = function() {
+    displayError("ファイルの読み込み中にエラーが発生しました。");
+  };
+  
   reader.readAsArrayBuffer(file);
 }
 
@@ -103,6 +104,9 @@ function displayGroupCounts(data) {
 // データをパースする部分でクラス人数を表示
 function parseData(content, delimiters) {
   const rows = splitWithDelimiters(content, delimiters);
+  if (rows.length === 0) {
+    throw new Error("データが空です。");
+  }
   const headers = rows.shift(); // 最初の行をヘッダーとして抽出
 
   // 列名の検証
@@ -189,9 +193,11 @@ function normalizeData(data) {
 
 // 選択された区切り文字でデータを分割
 function splitWithDelimiters(text, delimiters) {
-  const regex = new RegExp(`[${delimiters.replace(/[\s　]/g, " \\u3000")}]`);
+  // 全角スペースを含める
+  const regex = new RegExp(`[${delimiters.replace(/\s/g, "\\s")}　]`, 'g');
   return text.split("\n").map(row => row.trim().split(regex));
 }
+
 
 // ======================================
 // 対戦決定と表示
@@ -300,3 +306,10 @@ function displayPairsWithGroup(pairs) {
     resultDiv.innerHTML += tableHTML;
   }
 }
+
+function displayError(message) {
+  const validationResult = document.getElementById("validationResult");
+  validationResult.innerText = message;
+  validationResult.classList.add("error");
+}
+
