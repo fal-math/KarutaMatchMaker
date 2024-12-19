@@ -10,8 +10,8 @@ function shuffle(array) {
 }
 
 function previousPowerOfTwo(n) {
-  if (n < 1) return 0; // 1未満の場合は0を返す
-  let power = 1;
+  if (n < 2) return 0; // 2未満の場合は0を返す
+  let power = 2;
   while (power < n) {
     power <<= 1; // 左シフトして2倍にする
   }
@@ -27,88 +27,101 @@ function generatePairs(data, shuffleFn = shuffle) {
   const numberOfMatches = presentMembers.length - numberOfWinners;
 
   // プレイヤーをシャッフルし、試合用と不戦勝用に分割
-  const shuffled = shuffleFn([...presentMembers]);
-  const playersForMatches = shuffled.slice(0, 2 * numberOfMatches);
-  const walkovers = shuffled.slice(2 * numberOfMatches).map(player => [player]);
+  const shuffledPlayers = shuffleFn([...presentMembers]);
+  const playersForMatches = shuffledPlayers.slice(0, 2 * numberOfMatches);
+  const walkovers = shuffledPlayers.slice(2 * numberOfMatches).map(player => [player]);
 
   // pairsは [ [選手A, 選手B], [選手C, 選手D], ... ] の形式
   const pairs = Array.from({ length: numberOfMatches }, () => [null, null]);
 
-  // 左側・右側それぞれ何試合埋まっているか
+  // 左側・右側に何人割り当てたかを記録
   let leftCount = 0;
   let rightCount = 0;
 
-  while (playersForMatches.length > 0) {
-    const player = playersForMatches.shift();
-    let sameClubMatchPermission = false;
-
-    if (leftCount === numberOfMatches) {
-      // 左枠が埋まったら右枠を埋めるしかない
-      for (let i = rightCount; i < numberOfMatches; i++) {
-        const leftPlayer = pairs[i][0];
-        if (player["所属"] !== leftPlayer["所属"]) {
-          pairs[i][1] = player;
-          rightCount++;
-          break;
-        } else if (i + 1 === numberOfMatches) {
-          // 空き枠が全て同一所属で割り当て不可の場合
-          sameClubMatchPermission = true;
-        }
-        // 空き枠が全て同一所属で割り当て不可の場合
-        if (sameClubMatchPermission) {
-          // 左右が埋まっている対戦を探索
-          if (rightCount === 0) {
-            pairs[0][1] = player;
-            rightCount++;
-            break;
-          }
-          for (let j = 0; j < rightCount; j++) {
-            const leftPlayer = pairs[j][0];
-            const rightPlayer = pairs[j][1];
-            if (player["所属"] !== leftPlayer["所属"] && player["所属"] !== rightPlayer["所属"]) {
-              // 左の人と所属が違うなら交換可能
-              pairs[j][0] = player;
-              pairs[rightCount][1] = leftPlayer;
-              rightCount++;
-              break;
-            } else if (j + 1 === rightCount) {
-              // どうしようもないので同会対戦
-              pairs[rightCount][1] = player;
-              rightCount++;
-              break;
-            }
-          }
-        }
+  /**
+   * 指定した範囲内のpairsの右側に「異なる所属」のプレイヤーを割り当てる
+   * 割り当てに成功したらtrueを返し、できなければfalseを返す
+   */
+  function tryAssignDifferentClubOnRight(player, startIndex, endIndex) {
+    for (let i = startIndex; i < endIndex; i++) {
+      const leftPlayer = pairs[i][0];
+      if (player["所属"] !== leftPlayer["所属"]) {
+        pairs[i][1] = player;
+        return true;
       }
-    } else if (leftCount === rightCount) {
-      // 左右が同数なら新たな試合枠の左側に割り当て
+    }
+    return false;
+  }
+
+  /**
+   * 同一所属しか空きがなかった場合の特例処理
+   * 1. もし右側未割当の試合があれば、そこに強制割当
+   * 2. 既に割り当て済みの試合で、交換可能なケースがあればスワップ
+   * 3. 全て不可なら同会対戦を許容
+   */
+  function handleSameClubMatch(player) {
+    // 右側未割当の試合枠で同一所属ではない相手を探す
+    for (let j = 0; j < rightCount; j++) {
+      const leftPlayer = pairs[j][0];
+      const rightPlayer = pairs[j][1];
+      // 左右の所属と異なれば、その左側と入れ替え可能
+      if (player["所属"] !== leftPlayer["所属"] && player["所属"] !== rightPlayer["所属"]) {
+        pairs[j][0] = player;
+        pairs[rightCount][1] = leftPlayer;
+        return;
+      }
+    }
+    // 全て同一所属でどうしようもないなら、同会対戦を許容
+    pairs[rightCount][1] = player;
+  }
+
+  /**
+   * 左右バランスに応じた割り当て処理
+   * 左右が同数 -> 新規試合枠左側へ
+   * 左が多い -> 右側へ割当試行、全て同会なら新規左枠へ
+   */
+  function assignPlayer(player) {
+    // 左側枠が既に埋まっている場合(=leftCount===numberOfMatches)は右側へのみ割り当て可
+    if (leftCount === numberOfMatches) {
+      // 空き右側枠へ割当を試行する
+      const assigned = tryAssignDifferentClubOnRight(player, rightCount, numberOfMatches);
+      if (assigned) {
+        rightCount++;
+        return;
+      } else {
+        // 全て同一所属で割り当て不可能なら特例処理
+        handleSameClubMatch(player);
+        rightCount++;
+        return;
+      }
+    }
+
+    // 左右が同数なら、新たな試合枠の左側へ
+    if (leftCount === rightCount) {
       pairs[leftCount][0] = player;
       leftCount++;
+      return;
+    }
+
+    // 左が多い場合、右側へ割当可能か試行
+    const assigned = tryAssignDifferentClubOnRight(player, rightCount, leftCount);
+    if (assigned) {
+      // 右側へ割当可能だった場合
+      rightCount++;
+      return;
     } else {
-      // 左が多い場合、右側へ割り当て可能な枠を探す
-      let assigned = false;
-      for (let i = rightCount; i < leftCount; i++) {
-        const leftPlayer = pairs[i][0];
-        if (player["所属"] !== leftPlayer["所属"]) {
-          // 違う所属ならこの枠に割り当て可能
-          pairs[i][1] = player;
-          rightCount++;
-          assigned = true;
-          break;
-        } else if (i + 1 === leftCount) {
-          // 最後まで同一所属なら左側新規枠に割り当て
-          pairs[leftCount][0] = player;
-          leftCount++;
-          assigned = true;
-          break;
-        }
-      }
-      // ここでassignedがfalseになるケースはロジック上発生しないはず
-      if (assigned == false) {
-        throw new Error("something wrong");
-      }
+      // 全て同一所属なら新規左側枠へ
+      pairs[leftCount][0] = player;
+      leftCount++;
+      return;
     }
   }
 
-  return pairs.concat(walkovers) ;
+  // playersForMatchesから順に割り当て
+  while (playersForMatches.length > 0) {
+    const player = playersForMatches.shift();
+    assignPlayer(player);
+  }
+
+  return pairs.concat(walkovers);
 }
