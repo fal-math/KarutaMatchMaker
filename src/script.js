@@ -32,8 +32,8 @@ document.getElementById("pasteInput").addEventListener("input", function (event)
 // 文字コードを判別してデコード
 function detectEncodingAndDecode(file, callback) {
   const reader = new FileReader();
-  
-  reader.onload = function(e) {
+
+  reader.onload = function (e) {
     try {
       const uint8Array = new Uint8Array(e.target.result);
       const decoderShiftJIS = new TextDecoder("Shift_JIS");
@@ -48,11 +48,11 @@ function detectEncodingAndDecode(file, callback) {
       displayError("ファイルのデコード中にエラーが発生しました。");
     }
   };
-  
-  reader.onerror = function() {
+
+  reader.onerror = function () {
     displayError("ファイルの読み込み中にエラーが発生しました。");
   };
-  
+
   reader.readAsArrayBuffer(file);
 }
 
@@ -211,7 +211,7 @@ document.getElementById("generateButton").addEventListener("click", function () 
 
   // 各グループごとにペア生成
   for (const group in groupedData) {
-    const { pairs: groupPairs, walkovers } = generatePairs(groupedData[group]);
+    const  groupPairs = generatePairs(groupedData[group]);
     groupPairs.forEach(pair => {
       pair.groupKey = group; // グループ情報を各ペアに付与
     });
@@ -232,11 +232,11 @@ function groupByGradeAndGroup(data) {
   }, {});
 }
 
-
 // グループごとに対戦結果を表示
 function displayPairsWithGroup(pairs) {
   const resultDiv = document.getElementById("generationResult");
   resultDiv.innerHTML = ""; // 結果クリア
+  const fragment = document.createDocumentFragment();
 
   // グループごとにペアを分ける
   const groupedPairs = pairs.reduce((groups, pair) => {
@@ -250,61 +250,98 @@ function displayPairsWithGroup(pairs) {
   for (const groupKey in groupedPairs) {
     const groupPairs = groupedPairs[groupKey];
 
+    // セクションを作成
+    const section = document.createElement("section");
+
     // テーブルタイトルを追加
-    let tableHTML = `<h3>${groupKey} の対戦結果</h3>`;
-    tableHTML += `
-      <table>
-        <thead>
-          <tr>
-            <th class="seat-column">座席</th>
-            <th>ID</th>
-            <th>姓</th>
-            <th>名</th>
-            <th>所属</th>
-            <th class="seat-column">座席</th>
-            <th>ID</th>
-            <th>姓</th>
-            <th>名</th>
-            <th>所属</th>
-          </tr>
-        </thead>
-        <tbody>
-    `;
+    const title = document.createElement("h3");
+    title.textContent = `${groupKey} の対戦結果`;
+    section.appendChild(title);
+
+    // テーブルを作成
+    const table = document.createElement("table");
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+
+    ["座席", "ID", "姓", "名", "所属", "座席", "ID", "姓", "名", "所属"].forEach(text => {
+      const th = document.createElement("th");
+      th.textContent = text;
+      headerRow.appendChild(th);
+    });
+    thead.appendChild(headerRow);
+    table.appendChild(thead);
+
+    const tbody = document.createElement("tbody");
 
     // グループ内のペアをテーブルに追加
     groupPairs.forEach((pair, index) => {
+      const row = document.createElement("tr");
+
       const player1 = pair[0];
       const player2 = pair[1] || null;
 
-      tableHTML += `
-        <tr>
-          <td class="seat-column">${index * 2 + 1}</td>
-          <td>${player1["Id"]}</td>
-          <td>${player1["姓"] || ""}</td>
-          <td>${player1["名"] || ""}</td>
-          <td>${player1["所属"] || ""}</td>
-      `;
+      // プレイヤー1のセル
+      const seat1 = document.createElement("td");
+      seat1.classList.add("seat-column");
+      seat1.textContent = index * 2 + 1;
+      row.appendChild(seat1);
+
+      const id1 = document.createElement("td");
+      id1.textContent = player1["Id"];
+      row.appendChild(id1);
+
+      const lastName1 = document.createElement("td");
+      lastName1.textContent = player1["姓"] || "";
+      row.appendChild(lastName1);
+
+      const firstName1 = document.createElement("td");
+      firstName1.textContent = player1["名"] || "";
+      row.appendChild(firstName1);
+
+      const affiliation1 = document.createElement("td");
+      affiliation1.textContent = player1["所属"] || "";
+      row.appendChild(affiliation1);
 
       if (player2) {
-        tableHTML += `
-          <td class="seat-column">${index * 2 + 2}</td>
-          <td>${player2["Id"]}</td>
-          <td>${player2["姓"] || ""}</td>
-          <td>${player2["名"] || ""}</td>
-          <td>${player2["所属"] || ""}</td>
-        `;
+        // プレイヤー2のセル
+        const seat2 = document.createElement("td");
+        seat2.classList.add("seat-column");
+        seat2.textContent = index * 2 + 2;
+        row.appendChild(seat2);
+
+        const id2 = document.createElement("td");
+        id2.textContent = player2["Id"];
+        row.appendChild(id2);
+
+        const lastName2 = document.createElement("td");
+        lastName2.textContent = player2["姓"] || "";
+        row.appendChild(lastName2);
+
+        const firstName2 = document.createElement("td");
+        firstName2.textContent = player2["名"] || "";
+        row.appendChild(firstName2);
+
+        const affiliation2 = document.createElement("td");
+        affiliation2.textContent = player2["所属"] || "";
+        row.appendChild(affiliation2);
       } else {
-        tableHTML += `<td colspan="5" class="center">不戦勝</td>`;
+        // 不戦勝セル
+        const walkoverCell = document.createElement("td");
+        walkoverCell.colSpan = 5;
+        walkoverCell.classList.add("center", "walkover");
+        walkoverCell.textContent = "不戦勝";
+        row.appendChild(walkoverCell);
       }
 
-      tableHTML += "</tr>";
+      tbody.appendChild(row);
     });
 
-    tableHTML += "</tbody></table>";
-
-    // グループのテーブルを結果欄に追加
-    resultDiv.innerHTML += tableHTML;
+    table.appendChild(tbody);
+    section.appendChild(table);
+    fragment.appendChild(section);
   }
+
+  resultDiv.appendChild(fragment);
 }
 
 function displayError(message) {
