@@ -1,4 +1,4 @@
-const { generatePairs } = require("./shuffle.js"); // 修正
+const { generatePairs } = require('../src/shuffle');
 
 // モックされたシャッフル関数
 const mockShuffle = jest.fn(array => array);
