@@ -1,5 +1,3 @@
-module.exports = { generatePairs };
-
 // Fisher-Yates法によるシャッフル
 function shuffle(array) {
   for (let i = array.length - 1; i > 0; i--) {

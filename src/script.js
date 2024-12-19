@@ -266,12 +266,14 @@ function displayPairsWithGroup(pairs) {
       { text: player["Id"] || "" },
       { text: player["姓"] || "" },
       { text: player["名"] || "" },
-      { text: player["所属"] || "" },
+      { class: "affiliation-cell", text: player["所属"] || "", data: player["所属"] || "" } // 所属データを保持
     ];
 
-    return fields.map(({ class: className, text }) => {
+    return fields.map(({ class: className, text, data }) => {
       const cell = document.createElement("td");
       if (className) cell.classList.add(className); // クラスがあれば設定
+      if (data) cell.setAttribute("data-original-affiliation", data); // 元データを保存
+      // if (className === "affiliation-cell") cell.classList.add("affiliation-cell"); // 所属セル用クラス
       cell.textContent = text;
       return cell;
     });
@@ -335,3 +337,27 @@ function displayError(message) {
   validationResult.classList.add("error");
 }
 
+
+// ======================================
+// 所属を短縮表記
+// ======================================
+
+// 所属を短縮表記する
+function shortenAffiliation(affiliation, affiliationLength = 5) {
+  if (!affiliation) return ""; // 所属が空の場合はそのまま
+  return affiliation.length > affiliationLength ? affiliation.slice(0, affiliationLength) + "…" : affiliation;
+}
+
+// トグルスイッチとラベルのイベントリスナー
+document.getElementById("toggleAffiliationShorten").addEventListener("change", function () {
+  const isChecked = this.checked;
+  const affiliationCells = document.querySelectorAll("td.affiliation-cell"); // 所属セルを選択
+
+  affiliationCells.forEach(cell => {
+    const originalAffiliation = cell.getAttribute("data-original-affiliation"); // 元の値を取得
+    cell.textContent = isChecked
+      ? shortenAffiliation(originalAffiliation) // 短縮表記を適用
+      : originalAffiliation; // 元の値に戻す
+  });
+
+});

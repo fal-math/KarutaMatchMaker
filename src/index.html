@@ -12,13 +12,14 @@
 <body>
   <div class="container">
     <h1>対戦組み合わせ生成</h1>
+
     <div class="conditions">
       <section class="help">
         <h3>使い方</h3>
         <ol>
           <li>CSVファイルをアップロードするか、データをテキストエリアに貼り付けます。</li>
-          <li>「貼り付けたデータの型式確認」ボタンをクリックしてデータを検証します。(CSVファイルをアップロードした場合は、自動で検証が行われます)</li>
-          <li>検証が成功したら、「対戦組み合わせを生成」ボタンをクリックして結果を表示します。</li>
+          <li>「貼り付けたデータの型式確認」ボタンをクリックしてデータを検証します。<br>(CSVファイルをアップロードした場合は、自動で検証が行われます)</li>
+          <li>「対戦組み合わせを生成」ボタンをクリックして対戦組み合わせを表示します。</li>
         </ol>
       </section>
       <h3>入力データの条件</h3>
@@ -28,6 +29,8 @@
         <li><b>任意:</b> <code>組</code>, <code>欠席</code>, <code>名前読み</code> または <code>姓読み</code> と <code>名読み</code></li>
       </ul>
     </div>
+
+    <h2>データを入力</h2>
     <div>
       <label for="fileInput">CSVファイルを選択</label>
       <input type="file" id="fileInput" accept=".csv">
@@ -36,13 +39,23 @@
       <label for="pasteInput">データをコピーして貼り付け</label>
       <textarea id="pasteInput" rows="10" placeholder="ここにデータを貼り付けてください"></textarea>
     </div>
+
     <button id="validateButton" disabled>貼り付けたデータの型式確認</button>
     <p id="validationResult"></p>
+
+
     <div id="groupCounts" class="conditions">
       <h3>クラスごとの人数</h3>
       <ul id="groupCountList"></ul>
     </div>
     <button id="generateButton" disabled>対戦組み合わせを生成</button>
+    <h2>組み合わせ一覧</h2>
+    <label class="toggle-switch">
+      <input type="checkbox" id="toggleAffiliationShorten">
+      <span class="slider"></span>
+    </label>
+    <span id="toggleAffiliationLabel">所属を省略して表示</span>
+    
     <div id="generationResult"></div>
   </div>
   <script src="script.js"></script>
