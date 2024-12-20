@@ -187,6 +187,9 @@ function normalizeData(data) {
     if (!row["名前"] && row["姓"] && row["名"]) {
       row["名前"] = `${row["姓"]} ${row["名"]}`;
     }
+    if (!row["名前読み"] && row["姓読み"] && row["名読み"]) {
+      row["名前読み"] = `${row["姓読み"]} ${row["名読み"]}`;
+    }
     return row;
   });
 }
@@ -264,8 +267,7 @@ function displayPairsWithGroup(pairs) {
     const fields = [
       { class: "seat-column", text: seatText || "" },
       { text: player["Id"] || "" },
-      { text: player["姓"] || "" },
-      { text: player["名"] || "" },
+      { text: player["名前"] || "" },
       { class: "affiliation-cell", text: player["所属"] || "", data: player["所属"] || "" } // 所属データを保持
     ];
 
@@ -300,7 +302,7 @@ function displayPairsWithGroup(pairs) {
 
     // テーブルを作成
     const table = document.createElement("table");
-    table.appendChild(createTableHeader(["座席", "ID", "姓", "名", "所属", "座席", "ID", "姓", "名", "所属"]));
+    table.appendChild(createTableHeader(["席", "ID", "名前", "所属", "席", "ID", "名前", "所属"]));
     const tbody = document.createElement("tbody");
 
     // グループ内のペアをテーブルに追加
