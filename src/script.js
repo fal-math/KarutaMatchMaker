@@ -187,12 +187,14 @@ function normalizeData(data) {
     if (!row["名前"] && row["姓"] && row["名"]) {
       row["名前"] = `${row["姓"]} ${row["名"]}`;
     }
+    // 名前読みを統一する（名前読みがない場合は姓読み+名読みを結合）
     if (!row["名前読み"] && row["姓読み"] && row["名読み"]) {
       row["名前読み"] = `${row["姓読み"]} ${row["名読み"]}`;
     }
     return row;
   });
 }
+
 
 // 選択された区切り文字でデータを分割
 function splitWithDelimiters(text, delimiters) {
@@ -234,6 +236,12 @@ function groupByGradeAndGroup(data) {
   }, {});
 }
 
+// 名前とふりがなを統合して、HTMLにルビ形式で表示する
+function createRubyText(name, furigana) {
+  if (!furigana) return name; // ふりがながない場合は名前のみ
+  return `<ruby><rb>${name}</rb><rp>(</rp><rt>${furigana}</rt><rp>)</rp></ruby>`; // ルビ形式のHTML
+}
+
 // グループごとに対戦結果を表示
 function displayPairsWithGroup(pairs) {
   const resultDiv = document.getElementById("generationResult");
@@ -267,19 +275,26 @@ function displayPairsWithGroup(pairs) {
     const fields = [
       { class: "seat-column", text: seatText || "" },
       { text: player["Id"] || "" },
-      { text: player["名前"] || "" },
-      { class: "affiliation-cell", text: player["所属"] || "", data: player["所属"] || "" } // 所属データを保持
+      {
+        text: createRubyText(player["名前"] || "", player["名前読み"] || ""), // 名前とふりがなを統合
+        isHTML: true // HTMLとして挿入するフラグ
+      },
+      { class: "affiliation-cell", text: player["所属"] || "", data: player["所属"] || "" }
     ];
 
-    return fields.map(({ class: className, text, data }) => {
+    return fields.map(({ class: className, text, isHTML, data }) => {
       const cell = document.createElement("td");
       if (className) cell.classList.add(className); // クラスがあれば設定
       if (data) cell.setAttribute("data-original-affiliation", data); // 元データを保存
-      // if (className === "affiliation-cell") cell.classList.add("affiliation-cell"); // 所属セル用クラス
-      cell.textContent = text;
+      if (isHTML) {
+        cell.innerHTML = text; // HTMLを直接挿入
+      } else {
+        cell.textContent = text;
+      }
       return cell;
     });
   }
+
 
   // 補助関数: 不戦勝セル作成
   function createWalkoverCell() {
@@ -302,7 +317,8 @@ function displayPairsWithGroup(pairs) {
 
     // テーブルを作成
     const table = document.createElement("table");
-    table.appendChild(createTableHeader(["席", "ID", "名前", "所属", "席", "ID", "名前", "所属"]));
+    const headers = ["席", "ID", "名前", "所属", "席", "ID", "名前", "所属"];
+    table.appendChild(createTableHeader(headers));
     const tbody = document.createElement("tbody");
 
     // グループ内のペアをテーブルに追加

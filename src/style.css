@@ -154,6 +154,20 @@ tr:nth-child(odd) {
   font-weight: bold;
 }
 
+ruby {
+  font-size: 1em; /* ルビ全体のフォントサイズ */
+  display: inline-block;
+}
+rt {
+  font-size: 0.6em; /* ふりがなのフォントサイズ */
+  color: #666; /* ふりがなの色 */
+  margin-bottom: 3px; /* 名前との間隔 */
+}
+
+td {
+  vertical-align: middle; /* セルの中央揃え */
+}
+
 .center {
   text-align: center;
 }
