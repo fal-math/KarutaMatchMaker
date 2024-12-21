@@ -17,7 +17,9 @@ document.getElementById("fileInput").addEventListener("change", async function (
 
   try {
     const decodedContent = await detectEncodingAndDecode(file);
-    await processDecodedContent(decodedContent);
+    const {headers, data} = await processDecodedContent(decodedContent);
+    MEMBERS = data;
+    setDisplayColumns(headers);
   } catch (err) {
     displayError("ファイルの読み込みまたはデコードに失敗しました。");
   }

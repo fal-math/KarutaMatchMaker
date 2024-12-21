@@ -76,10 +76,7 @@ function normalizeData(data) {
 // 実際のデコード結果を受け取って処理する関数
 async function processDecodedContent(decodedContent) {
   const delimiters = ",\t ";
-  const { headers, data } = parseData(decodedContent, delimiters);
-  MEMBERS = data;
-  console.debug("process", data);
-  setDisplayColumns(headers);
+  return parseData(decodedContent, delimiters);
 }
 
 // 文字コードを判別してデコード
