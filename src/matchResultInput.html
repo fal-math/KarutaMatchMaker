@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>対戦結果入力ツール</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+
+<body>
+  <header>
+    <h1>対戦結果入力ツール</h1>
+  </header>
+
+  <!-- CSVファイルのアップロードと読込ボタン -->
+  <section id="uploadSection">
+    <h2>1. CSVファイルのアップロード</h2>
+    <p>既存ツールで出力された対戦組み合わせCSVファイルを選択してください。</p>
+    <input type="file" id="csvFileInput" accept=".csv" />
+    <button id="loadCSVButton">CSVを読み込む</button>
+    <p id="uploadMessage" class="error"></p>
+  </section>
+
+  <!-- 対戦一覧テーブル + ユーザー入力フォーム -->
+  <section id="matchListSection" class="hidden">
+    <h2>2. 対戦一覧と結果入力</h2>
+
+    <label class="toggle-switch">
+      <input type="checkbox" id="toggleAffiliationShorten">
+      <span class="slider"></span>
+    </label>
+    <span id="toggleAffiliationLabel">所属表示の省略</span>
+    <table id="matchTable">
+      <thead>
+        <tr>
+          <th>左席</th>
+          <th>左 名前</th>
+          <th>左 所属</th>
+          <th>右席</th>
+          <th>右 名前</th>
+          <th>右 所属</th>
+          <th>勝敗</th>
+          <th>スコア</th>
+        </tr>
+      </thead>
+      <tbody>
+        <!-- JavaScriptで対戦情報＋入力フォームを動的に作成 -->
+      </tbody>
+    </table>
+  </section>
+
+  <!-- 入力確認および出力 -->
+  <section id="outputSection" class="hidden">
+    <h2>3. 結果確認とCSV出力</h2>
+    <button id="downloadResultsButton">結果CSVをダウンロード</button>
+    <p id="outputMessage" class="success"></p>
+  </section>
+
+  <!-- 必要なライブラリを読み込み (CDNまたはlibsに配置) -->
+  <!-- <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script> -->
+
+  <script src="script.js"></script>
+  <script src="parseCSV.js"></script>
+  <script src="resultInput.js"></script>
+  <script src="exportCSV.js"></script>
+  <script src="shortenAffiliation.js"></script>
+</body>
+
+</html>

@@ -256,30 +256,6 @@ function displayError(message) {
 
 
 // ======================================
-// 所属を短縮表記
-// ======================================
-
-// 所属を短縮表記する
-function shortenAffiliation(affiliation, affiliationLength = 6) {
-  if (!affiliation) return ""; // 所属が空の場合はそのまま
-  return affiliation.length > affiliationLength ? affiliation.slice(0, affiliationLength) + "…" : affiliation;
-}
-
-// トグルスイッチとラベルのイベントリスナー
-document.getElementById("toggleAffiliationShorten").addEventListener("change", function () {
-  const isChecked = this.checked;
-  const affiliationCells = document.querySelectorAll("td.affiliation-cell"); // 所属セルを選択
-
-  affiliationCells.forEach(cell => {
-    const originalAffiliation = cell.getAttribute("data-original-affiliation"); // 元の値を取得
-    cell.textContent = isChecked
-      ? shortenAffiliation(originalAffiliation) // 短縮表記を適用
-      : originalAffiliation; // 元の値に戻す
-  });
-
-});
-
-// ======================================
 // 対戦表画像のダウンロード
 // ======================================
 document.getElementById("downloadImageButton").addEventListener("click", function () {
@@ -324,13 +300,14 @@ document.getElementById("downloadImageButton").addEventListener("click", functio
 // CSVダウンロード処理
 function downloadCSV() {
   const tableContainers = document.querySelectorAll(".tableContainer table");
-  let csvContent = "\uFEFF級組,席,ID,名前,所属,席,ID,名前,所属\n"; // ヘッダー行 (BOM付き)
+  let csvContent = "\uFEFF"; // BOM付き
+  csvContent += "級組,席,ID,名前,所属,席,ID,名前,所属\n"; // ヘッダー行 
 
   tableContainers.forEach(table => {
     const rows = table.querySelectorAll("tbody tr");
     rows.forEach(row => {
       const cells = row.querySelectorAll("td");
-      const rowData = Array.from(cells).map(cell => cell.innerText.replace(/\n/g, ""));
+      const rowData = Array.from(cells).map(cell => (cell.querySelector('rb') ?? cell).innerText.replace(/\n/g, ""));
       const groupName = table.closest(".tableContainer").querySelector("h3").innerText.replace(" の対戦組み合わせ", "");
       csvContent += [groupName, ...rowData].join(",") + "\n";
     });
