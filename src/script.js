@@ -311,9 +311,13 @@ function displayPairsWithGroup(pairs) {
 
     // セクションを作成
     const section = document.createElement("section");
+    
+    const div = document.createElement("div");
+    div.setAttribute("class","tableContainer");
+    section.appendChild(div);
     const title = document.createElement("h3");
-    title.textContent = `${groupKey} の対戦結果`;
-    section.appendChild(title);
+    title.textContent = `${groupKey} の対戦組み合わせ`;
+    div.appendChild(title);
 
     // テーブルを作成
     const table = document.createElement("table");
@@ -342,7 +346,8 @@ function displayPairsWithGroup(pairs) {
     });
 
     table.appendChild(tbody);
-    section.appendChild(table);
+    div.appendChild(table);
+    section.appendChild(div);
     fragment.appendChild(section);
   }
 
@@ -361,7 +366,7 @@ function displayError(message) {
 // ======================================
 
 // 所属を短縮表記する
-function shortenAffiliation(affiliation, affiliationLength = 5) {
+function shortenAffiliation(affiliation, affiliationLength = 6) {
   if (!affiliation) return ""; // 所属が空の場合はそのまま
   return affiliation.length > affiliationLength ? affiliation.slice(0, affiliationLength) + "…" : affiliation;
 }
@@ -378,4 +383,42 @@ document.getElementById("toggleAffiliationShorten").addEventListener("change", f
       : originalAffiliation; // 元の値に戻す
   });
 
+});
+
+// ======================================
+// 対戦表画像のダウンロード
+// ======================================
+document.getElementById("downloadImageButton").addEventListener("click", function () {
+  const tableContainers = document.querySelectorAll(".tableContainer");
+  console.debug(tableContainers);
+  tableContainers.forEach((container, index) => {
+    // 元の overflow と height を保存
+    const originalOverflow = container.style.overflow;
+    const originalHeight = container.style.height;
+
+    // 要素全体をキャプチャできるようにスタイルを解除
+    container.style.overflow = "visible";
+    container.style.height = "auto";
+
+    setTimeout(() => {
+      html2canvas(container, {
+        scale: 1
+      }).then(canvas => {
+        // 元のスタイルに戻す
+        container.style.overflow = originalOverflow;
+        container.style.height = originalHeight;
+
+        // 画像データを取得
+        const imgData = canvas.toDataURL("image/png");
+
+        // ダウンロードリンクを作成してクリック
+        const link = document.createElement("a");
+        link.href = imgData;
+        link.download = `table_${index + 1}.png`; // 連番などを付与
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      });
+    }, 300);
+  });
 });

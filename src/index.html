@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>対戦組み合わせ生成</title>
   <link rel="stylesheet" href="style.css" type="text/css">
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas"></script>
 </head>
 
 <body>
@@ -54,8 +55,9 @@
       <span class="slider"></span>
     </label>
     <span id="toggleAffiliationLabel">所属表示の省略</span>
-    
-    <div id="generationResult"></div>
+    <button id="downloadImageButton">表をまとめてダウンロード(png)</button>
+    <div id="generationResult">
+    </div>
   </div>
   <script src="script.js"></script>
   <script src="shuffle.js"></script>
