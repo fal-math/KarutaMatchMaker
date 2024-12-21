@@ -4,8 +4,17 @@ body {
   line-height: 1.3;
 }
 
+
 h1 {
   text-align: center;
+}
+
+h2 {
+  margin-top: 20px;
+  color: black;
+  font-weight: bold;
+  border-bottom: 2px solid black;
+  padding-bottom: 5px;
 }
 
 h3 {
