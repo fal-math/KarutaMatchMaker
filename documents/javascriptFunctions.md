@@ -12,8 +12,6 @@
 
 ## script.js
 
-### 定義されている主な関数
-
 1. `displayGroupCounts(data)`  
    - 呼び出している関数  
      - `previousPowerOfTwo(...)`  
@@ -78,8 +76,6 @@
 
 ## parse.js
 
-### 定義されている主な関数
-
 1. `parseData(content, delimiters)`  
    - 呼び出している関数  
      - `splitWithDelimiters(content, delimiters)` (同ファイル内)  
@@ -126,8 +122,6 @@
 
 ## shuffle.js
 
-### 定義されている主な関数
-
 1. `shuffle(array)`  
    - 呼び出している関数: なし  
    - 概要  
@@ -149,7 +143,7 @@
 
 ---
 
-# まとめ
+## まとめ
 
 - script.js  
   - UI まわり（ファイル読込、テキスト貼り付け、検証、対戦生成など）のイベントリスナーや画面表示用の関数が定義されている。  
