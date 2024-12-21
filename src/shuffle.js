@@ -18,7 +18,9 @@ function previousPowerOfTwo(n) {
 
 function generatePairs(data, shuffleFn = shuffle) {
   // 欠席者を除外
-  const presentMembers = data.filter(member => member["欠席"] !== "TRUE");
+  const presentMembers = data.filter(member => 
+    member["欠席"] !== "TRUE" && member["敗退"] !== "TRUE"
+  );
 
   // 試合数・勝ち抜き数を計算
   const numberOfWinners = previousPowerOfTwo(presentMembers.length);

@@ -4,7 +4,7 @@ let DISPLAY_COLUMNS = []; // 出力する列を格納
 // 必須列、条件付き必須列、任意列の設定
 const REQUIRED_COLUMNS = ["Id", "級", "所属"];
 const CONDITIONAL_REQUIRED_COLUMNS = [["名前"], ["姓", "名"]];
-const OPTIONAL_COLUMNS = ["組", "勝数", "欠席", "名前読み", "姓読み", "名読み"];
+const OPTIONAL_COLUMNS = ["組", "欠席", "敗退", "名前読み", "姓読み", "名読み"];
 
 // ======================================
 // 入力
@@ -66,7 +66,7 @@ document.getElementById("validateButton").addEventListener("click", function () 
 function displayGroupCounts(data) {
   const groupCounts = data.reduce((counts, row) => {
     // 欠席者は除外
-    if (row["欠席"] === "TRUE") return counts;
+    if (row["欠席"] === "TRUE"||row["敗退"] === "TRUE") return counts;
 
     const groupKey = row["組"] ? `${row["級"]}${row["組"]}` : `${row["級"]}`; // 組がなければ級のみ
     counts[groupKey] = (counts[groupKey] || 0) + 1;
@@ -117,6 +117,7 @@ document.getElementById("generateButton").addEventListener("click", function () 
   displayPairsWithGroup(allPairs);
   document.getElementById("generateButton").disabled = true;
   document.getElementById("downloadImageButton").disabled = false;
+  document.getElementById("downloadCSVButton").disabled = false;
 });
 
 // データを級・組のペアでグループ化し、組がない場合は級のみを表示
@@ -315,3 +316,39 @@ document.getElementById("downloadImageButton").addEventListener("click", functio
     }, 300);
   });
 });
+
+
+// ======================================
+// 対戦表CSVのダウンロード
+// ======================================
+// CSVダウンロード処理
+function downloadCSV() {
+  const tableContainers = document.querySelectorAll(".tableContainer table");
+  let csvContent = "\uFEFF級組,席,ID,名前,所属,席,ID,名前,所属\n"; // ヘッダー行 (BOM付き)
+
+  tableContainers.forEach(table => {
+    const rows = table.querySelectorAll("tbody tr");
+    rows.forEach(row => {
+      const cells = row.querySelectorAll("td");
+      const rowData = Array.from(cells).map(cell => cell.innerText.replace(/\n/g, ""));
+      const groupName = table.closest(".tableContainer").querySelector("h3").innerText.replace(" の対戦組み合わせ", "");
+      csvContent += [groupName, ...rowData].join(",") + "\n";
+    });
+    
+  });
+
+  // CSVデータを生成
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+
+  // ダウンロードリンクを作成して自動クリック
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "対戦組み合わせ.csv");
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+}
+
+// ダウンロードボタンのイベントリスナー
+document.getElementById("downloadCSVButton").addEventListener("click", downloadCSV);

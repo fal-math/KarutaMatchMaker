@@ -199,8 +199,9 @@ CSVデータまたは貼り付けデータを入力として、
 src/
  ├── index.html
  ├── style.css
- ├── script.js
- └── shuffle.js
+ ├── script.js メインロジック（イベント駆動）および UI 表示
+ ├── parse.js データ解析・正規化
+ └── shuffle.js シャッフル・対戦生成のロジック
 ```
 
 ---

@@ -25,7 +25,7 @@
       <ul>
         <li><b>必須:</b> <code>Id</code>, <code>級</code>, <code>所属</code></li>
         <li><b>どちらかが必須:</b> <code>名前</code> または <code>姓</code> と <code>名</code></li>
-        <li><b>任意:</b> <code>組</code>, <code>欠席</code>, <code>名前読み</code> または <code>姓読み</code> と <code>名読み</code></li>
+        <li><b>任意:</b> <code>組</code>, <code>欠席</code>, <code>敗退</code>, <code>名前読み</code> または <code>姓読み</code> と <code>名読み</code></li>
       </ul>
     </div>
 
@@ -36,7 +36,7 @@
     </div>
     <div>
       <label for="pasteInput">データをコピーして貼り付け</label>
-      <textarea id="pasteInput" rows="10" placeholder="ここにデータを貼り付けてください"></textarea>
+      <textarea id="pasteInput" rows="5" placeholder="ここにデータを貼り付けてください"></textarea>
     </div>
 
     <button id="validateButton" disabled>貼り付けたデータの型式確認</button>
@@ -54,7 +54,8 @@
       <span class="slider"></span>
     </label>
     <span id="toggleAffiliationLabel">所属表示の省略</span>
-    <button id="downloadImageButton" disabled>表をまとめてダウンロード(.png)</button>
+    <button id="downloadImageButton" disabled>画像でダウンロード</button>
+    <button id="downloadCSVButton" disabled>CSVでダウンロード</button>
     <div id="generationResult">
     </div>
   </div>
