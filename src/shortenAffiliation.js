@@ -5,7 +5,7 @@
 // 所属を短縮表記する
 function shortenAffiliation(affiliation, affiliationLength = 6) {
   if (!affiliation) return ""; // 所属が空の場合はそのまま
-  return affiliation.length > affiliationLength ? affiliation.slice(0, affiliationLength) + "…" : affiliation;
+  return affiliation.length > affiliationLength + 1 ? affiliation.slice(0, affiliationLength) + "…" : affiliation;
 }
 
 // トグルスイッチとラベルのイベントリスナー

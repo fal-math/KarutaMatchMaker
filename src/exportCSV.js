@@ -27,7 +27,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const rows = matchTableBody.querySelectorAll("tr");
 
     // CSVのヘッダ行
-    let resultCSV = "級組,左ID,右ID,左 座席,左 名前,左 所属,右 座席,右 名前,右 所属,勝敗,スコア\n";
+    let resultCSV = "\uFEFF"; // BOM付き
+    resultCSV += "級組,左ID,右ID,左 座席,左 名前,左 所属,右 座席,右 名前,右 所属,勝敗,スコア\n";
 
     rows.forEach((tr) => {
       // 隠しデータはdata属性から取得
